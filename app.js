@@ -66,7 +66,7 @@ const addInformation = () => {
     inquirer
         .prompt({
             type: "list",
-            name: "mainMenuTask",
+            name: "addedInfo",
             message: "Which would you like to add?",
             choices: [
                 "Department",
@@ -75,7 +75,7 @@ const addInformation = () => {
             ],
         })
         .then(answer => {
-            switch (answer.mainMenuTask) {
+            switch (answer.addedInfo) {
                 case "Department":
                     inquirer.prompt({
                         type: "input",
@@ -169,72 +169,95 @@ const addInformation = () => {
 
 // * View departments, roles, employees
 const viewInformation = () => {
+    const query =
+        'SELECT first_name, last_name, title, name, salary, manager_id FROM employees JOIN employeeRole ON employees.role_id = employeeRole.id JOIN departments ON employeeRole.department_id = departments.id;'
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        mainMenu();
+    })
+};
+
+// * Update employee roles
+const updateEmployeeRole = () => {
     inquirer
-        .prompt({
-            type: "list",
-            name: "tableView",
-            message: "Which table would you like to view?",
-            choices: [
-                "Deparments",
-                "Roles",
-                "Employees",
-            ],
-        })
-        .then(answer => {
-            switch (answer.tableView) {
-                case "Deparments":
-                    connection.query(`SELECT * FROM departments`, (err, res) => {
-                        if (err) throw err;
-                        console.table(res);
-                        mainMenu();
+        .prompt([
+            {
+                type: "input",
+                name: "employeeId",
+                message: "Please enter the employee id whose role will be updated:",
+            },
+            {
+                type: "list",
+                name: "employeeUpdate",
+                message: "Which would you like to update",
+                choices: [
+                    "Title",
+                    "Salary",
+                    "Department ID"
+                ]
+            }
+        ])
+        .then(data => {
+            switch (data.employeeUpdate) {
+                case "Title":
+                    inquirer.prompt({
+                        type: "input",
+                        name: "titleUpdate",
+                        message: "What is the new title?"
+                    }).then(answer => {
+                        const query = `UPDATE employeeRole SET title = "${answer.titleUpdate}" WHERE id = ${data.employeeId}`
+                        connection.query(query, answer.titleUdate, (err, res) => {
+                            if (err) throw err;
+                            connection.query(`SELECT * FROM employeeRole`, answer.title, (err, res) => {
+                                if (err) throw err;
+                                console.table(res);
+                                mainMenu();
+                            })
+                        })
                     })
                     break;
-                case "Roles":
-                    connection.query(`SELECT * FROM employeeRole`, (err, res) => {
-                        if (err) throw err;
-                        console.table(res);
-                        mainMenu();
+                case "Salary":
+                    inquirer.prompt({
+                        type: "input",
+                        name: "salaryUpdate",
+                        message: "What is the new salary?"
+                    }).then(answer => {
+                        const query = `UPDATE employeeRole SET salary = ${answer.salaryUpdate} WHERE id = ${data.employeeId}`
+                        connection.query(query, answer.salaryUdate, (err, res) => {
+                            if (err) throw err;
+                            connection.query(`SELECT * FROM employeeRole`, answer.name, (err, res) => {
+                                if (err) throw err;
+                                console.table(res);
+                                mainMenu();
+                            })
+                        })
                     })
                     break;
-                case "Employees":
-                    connection.query(`SELECT * FROM employees`, (err, res) => {
-                        if (err) throw err;
-                        console.table(res);
-                        mainMenu();
+                case "Department ID":
+                    inquirer.prompt({
+                        type: "input",
+                        name: "departmentUpdate",
+                        message: "What is the new department ID?"
+                    }).then(answer => {
+                        const query = `UPDATE employeeRole SET department_id = ${answer.departmentUpdate} WHERE id = ${data.employeeId}`
+                        connection.query(query, answer.departmentUdate, (err, res) => {
+                            if (err) throw err;
+                            connection.query(`SELECT * FROM employeeRole`, answer.title, (err, res) => {
+                                if (err) throw err;
+                                console.table(res);
+                                mainMenu();
+                            })
+                        })
                     })
+                    break;
+                default:
+                    connection.end();
                     break;
             }
         });
+
 };
-
-// * Update employee roles -------------------NEED CLARIFICATION-------------------------
-const updateEmployeeRole = () => {
-        inquirer
-            .prompt([
-                {
-                    type: "input",
-                    name: "employeeId",
-                    message: "Please enter the employee id whose manager will be updated.",
-                },
-                {
-                    type: "input",
-                    name: "managerUpdate",
-                    message: "Please enter the new manager id",
-                }
-            ])
-            .then(answer => {
-                const query = `UPDATE employees SET manager_id = ${answer.managerUpdate} WHERE id = ${answer.employeeId}`
-                connection.query(query, (err, res) => {
-                    connection.query(`SELECT * FROM employees`, answer.name, (err, res) => {
-                    if (err) throw err;
-                    console.table(res);
-                    mainMenu();
-                    })
-                })
-            })
-    }
-
-
 
 // * Update employee managers
 const updateManager = () => {
@@ -255,9 +278,9 @@ const updateManager = () => {
             const query = `UPDATE employees SET manager_id = ${answer.managerUpdate} WHERE id = ${answer.employeeId}`
             connection.query(query, (err, res) => {
                 connection.query(`SELECT * FROM employees`, answer.name, (err, res) => {
-                if (err) throw err;
-                console.table(res);
-                mainMenu();
+                    if (err) throw err;
+                    console.table(res);
+                    mainMenu();
                 })
             })
         })
@@ -280,8 +303,4 @@ const employeeManager = () => {
             })
         })
 }
-
-// * Delete departments, roles, and employees
-
-
 // * View the total utilized budget of a department -- ie the combined salaries of all employees in that department
